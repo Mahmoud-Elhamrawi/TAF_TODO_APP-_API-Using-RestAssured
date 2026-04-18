@@ -15,4 +15,4 @@
             java-version: '17'
             distribution: 'temurin'
             cache: maven
-        - run: mvn clan test
+        - run:  mvn clean test

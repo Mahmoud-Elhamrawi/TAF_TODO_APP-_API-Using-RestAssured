@@ -18,7 +18,7 @@ name: Run Test API Using RestAssured
 
 on:
   push:
-    branches:  [ "main" , "master"]
+    branches: ["main", "master"]
 
 jobs:
   build:
@@ -28,23 +28,44 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+        continue-on-error: true
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
+          cache: maven
 
       - name: Run Tests
         run: mvn clean verify
 
-      - name: Allure Report Action
-        uses: simple-elf/allure-report-action@v1
-        with:
-          allure_results: target/allure-results
-          allure_report: allure-report
+      - name: Install Allure
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.zip
+          unzip allure-2.29.0.zip
+          sudo mv allure-2.29.0 /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/bin/allure
+
+      - name: Copy Allure history
+        run: |
+          if [ -d "gh-pages/history" ]; then
+            mkdir -p target/allure-results/history
+            cp -r gh-pages/history/* target/allure-results/history
+          fi
+
+      - name: Generate Allure Report
+        run: allure generate target/allure-results -o allure-report
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
